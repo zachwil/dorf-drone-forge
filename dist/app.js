@@ -3,7 +3,7 @@ const $=id=>document.getElementById(id);
 const names=['C','C♯','D','D♯','E','F','F♯','G','G♯','A','A♯','B'];
 const noteName=n=>names[n%12]+(Math.floor(n/12)-1);
 const layerDefs=[['ᛟ','Mountain heart','A low, unwavering pulse beneath the stone.','sine',-12],['ᚠ','Forge choir','A weathered chorus of detuned harmonics.','sawtooth',0],['ᛉ','Crystal vault','A soft fifth, glinting in the darkness.','triangle',7]];
-let settings={levels:[65,28,35],detunes:[4,9,6],muted:[false,false,false],root:38,master:55,cutoff:900,reverb:65,bpm:48,steps:[0,2,4,6,4,2,1,-1]};
+let settings={randomizeEachPass:false,restBias:18,keyboardVoice:'soft',sequenceVoice:'soft',levels:[65,28,35],detunes:[4,9,6],muted:[false,false,false],root:38,master:55,cutoff:900,reverb:65,bpm:48,steps:[0,2,4,6,4,2,1,-1]};
 let ctx,bus,filter,wet,convolver,master,analyser,destination,droneVoices=[],playing=false,midi,selectedInput,selectedOutput,recorder,chunks=[],stepIndex=0,nextStep=0,seqVoice=null;
 const voices=new Map(),held=new Set(),outNotes=new Map();
 let sustain=false,bend=0;
@@ -19,20 +19,44 @@ function createVoice(note,type='triangle',gain=.15,detune=0,attack=.2){let stopp
 function startDrones(){droneVoices=layerDefs.map((d,i)=>createVoice(settings.root+d[4],d[3],settings.muted[i]?0:settings.levels[i]/100*.09,settings.detunes[i],2));}
 function stopDrones(){droneVoices.forEach(v=>v.stop(1));droneVoices=[];}
 function update(){for(let i=0;i<3;i++){const v=droneVoices[i];if(v){ramp(v.g.gain,settings.muted[i]?0:settings.levels[i]/100*.09);v.oscs.forEach((o,k)=>{ramp(o.frequency,frequency(settings.root+layerDefs[i][4]),.3);ramp(o.detune,(k?1:-1)*settings.detunes[i]);});}}if(ctx){ramp(master.gain,settings.master/100*.65);ramp(filter.frequency,settings.cutoff);ramp(wet.gain,settings.reverb/100);}}
-function refresh(){for(let i=0;i<3;i++){for(const [prefix,field,suffix] of [['level','levels','%'],['detune','detunes',' ct']]){$(prefix+i).value=settings[field][i];$(prefix+i+'Value').textContent=settings[field][i]+suffix;}$('layer'+i).classList.toggle('muted-layer',settings.muted[i]);$('mute'+i).textContent=settings.muted[i]?'Unmute':'Mute';$('mute'+i).setAttribute('aria-pressed',settings.muted[i]);}for(const [k,suffix] of [['master','%'],['cutoff',' Hz'],['reverb','%']]){$(k).value=settings[k];$(k+'Value').textContent=settings[k]+suffix;}$('root').value=settings.root;$('bpm').value=settings.bpm;renderSteps();update();}
+function refresh(){$('randomizeEachPass').checked=settings.randomizeEachPass;$('restBias').value=settings.restBias;$('restBiasValue').textContent=settings.restBias+'%';for(const id of ['keyboardVoice','sequenceVoice'])$(id).value=settings[id];$('voiceDescription').textContent=instrumentVoices[settings.keyboardVoice].description;for(let i=0;i<3;i++){for(const [prefix,field,suffix] of [['level','levels','%'],['detune','detunes',' ct']]){$(prefix+i).value=settings[field][i];$(prefix+i+'Value').textContent=settings[field][i]+suffix;}$('layer'+i).classList.toggle('muted-layer',settings.muted[i]);$('mute'+i).textContent=settings.muted[i]?'Unmute':'Mute';$('mute'+i).setAttribute('aria-pressed',settings.muted[i]);}for(const [k,suffix] of [['master','%'],['cutoff',' Hz'],['reverb','%']]){$(k).value=settings[k];$(k+'Value').textContent=settings[k]+suffix;}$('root').value=settings.root;$('bpm').value=settings.bpm;renderSteps();update();}
+for(const id of ['keyboardVoice','sequenceVoice']){$(id).innerHTML=Object.entries(instrumentVoices).map(([key,spec])=>`<option value="${key}">${spec.name}</option>`).join('');$(id).onchange=e=>{settings[id]=e.target.value;refresh();};}
 for(let i=0;i<3;i++){for(const [prefix,field] of [['level','levels'],['detune','detunes']])$(prefix+i).oninput=e=>{settings[field][i]=+e.target.value;refresh();};$('mute'+i).onclick=()=>{settings.muted[i]=!settings.muted[i];refresh();};}
 for(const k of ['master','cutoff','reverb','root'])$(k).oninput=e=>{settings[k]=+e.target.value;refresh();};
 $('bpm').onchange=e=>{settings.bpm=Math.min(120,Math.max(20,+e.target.value||48));refresh();};
 const scale=[0,2,3,5,7,8,10,12];
 function renderSteps(){$('steps').innerHTML=settings.steps.map((n,i)=>`<button aria-label="Step ${i+1}: ${n<0?'rest':noteName(settings.root+12+scale[n])}" data-step="${i}">${n<0?'—':names[(settings.root+scale[n])%12]}<small>${String(i+1).padStart(2,'0')}</small></button>`).join('');}
+function randomizeSequence(){
+ const next=Array.from({length:8},()=>Math.random()<settings.restBias/100?-1:Math.floor(Math.random()*scale.length));
+ // Anchor the first sounding step, while respecting the rest probability for every step.
+ const first=next.findIndex(n=>n>=0);
+ if(first>=0)next[first]=[0,4,7][Math.floor(Math.random()*3)];
+ settings.steps=next;
+ renderSteps();
+ if(playing&&$('seqOn').checked&&stepIndex>0){const current=(stepIndex+7)%8;$('steps').children[current]?.classList.add('current');}
+ $('sequenceStatus').textContent='New melody forged.';
+}
+$('randomizeSequence').onclick=randomizeSequence;
+$('randomizeEachPass').onchange=e=>{settings.randomizeEachPass=e.target.checked;$('sequenceStatus').textContent=settings.randomizeEachPass?'New pattern after every complete pass.':'Keeping the current pattern.';};
+$('restBias').oninput=e=>{settings.restBias=+e.target.value;$('restBiasValue').textContent=settings.restBias+'%';};
 $('steps').onclick=e=>{const b=e.target.closest('button');if(!b)return;const i=+b.dataset.step;settings.steps[i]=settings.steps[i]===7?-1:settings.steps[i]+1;renderSteps();};
 function sendOn(key,n,velocity){if(!selectedOutput)return;const ch=+$('channel').value;try{selectedOutput.send([0x90+ch,n,velocity]);outNotes.set(key,{port:selectedOutput,n,ch});}catch{notice('MIDI output disconnected. Reconnect your synth.');}}
 function sendOff(key){const o=outNotes.get(key);if(o){try{o.port.send([0x80+o.ch,o.n,0]);}catch{}outNotes.delete(key);}}
-function onNote(key,n,velocity=90,external=true){if(!ctx||ctx.state!=='running')return;if(voices.has(key))offNote(key,true);if(voices.size>=24)offNote(voices.keys().next().value,true);held.add(key);const v=createVoice(n,'triangle',velocity/127*.12,3,.08);v.oscs.forEach(o=>o.detune.value+=bend);voices.set(key,v);if(external)sendOn(key,n,velocity);highlight();}
-function offNote(key,force=false){held.delete(key);if(sustain&&key.startsWith('midi:')&&!force)return;const v=voices.get(key);if(v){v.stop();voices.delete(key);}sendOff(key);highlight();}
+function onNote(key,n,velocity=90,external=true){if(!ctx||ctx.state!=='running')return;if(voices.has(key))offNote(key,true);if(voices.size>=24)offNote(voices.keys().next().value,true);held.add(key);const v=createInstrumentVoice(n,key==='seq'?settings.sequenceVoice:settings.keyboardVoice,velocity);v.oscs.forEach(o=>o.detune.value+=bend);voices.set(key,v);window.mineVisual?.noteOn(key,n,velocity);if(external)sendOn(key,n,velocity);highlight();}
+function offNote(key,force=false){held.delete(key);if(sustain&&key.startsWith('midi:')&&!force)return;const v=voices.get(key);if(v){v.stop();voices.delete(key);window.mineVisual?.noteOff(key);}sendOff(key);highlight();}
 function highlight(){document.querySelectorAll('.key').forEach(k=>k.classList.toggle('active',[...voices.values()].some(v=>v.note===+k.dataset.note)));}
 function stopSequence(){if(seqVoice){offNote(seqVoice,true);seqVoice=null;}document.querySelectorAll('[data-step]').forEach(b=>b.classList.remove('current'));}
-setInterval(()=>{if(!playing||!$('seqOn').checked||!ctx)return;if(ctx.currentTime<nextStep)return;stopSequence();const i=stepIndex++%8,n=settings.steps[i];$('steps').children[i].classList.add('current');if(n>=0){seqVoice='seq';onNote(seqVoice,settings.root+12+scale[n],65);}nextStep=ctx.currentTime+60/settings.bpm;},30);
+function tickSequence(){
+ if(!playing||!$('seqOn').checked||!ctx||ctx.currentTime<nextStep)return;
+ stopSequence();
+ if(stepIndex>0&&stepIndex%8===0&&settings.randomizeEachPass)randomizeSequence();
+ const i=stepIndex++%8,n=settings.steps[i];
+ document.querySelectorAll('[data-step]').forEach(b=>b.classList.remove('current'));
+ $('steps').children[i].classList.add('current');
+ if(n>=0){seqVoice='seq';onNote(seqVoice,settings.root+12+scale[n],65);}
+ nextStep=ctx.currentTime+60/settings.bpm;
+}
+setInterval(tickSequence,30);
 $('seqOn').onchange=()=>{stopSequence();stepIndex=0;nextStep=0;};
 $('play').onclick=async()=>{try{await init();playing=!playing;if(playing){startDrones();nextStep=0;stepIndex=0;}else{stopDrones();stopSequence();}transport();}catch(e){notice('Audio could not start: '+e.message);}};
 function transport(){$('play').textContent=playing?'■ Rest the forge':'▶ Awaken the forge';$('state').textContent=playing?'The mountain is singing':'The halls are quiet';$('lamp').classList.toggle('active',playing);}
@@ -55,6 +79,6 @@ $('midiOutput').onchange=()=>{[...outNotes.keys()].forEach(sendOff);selectedOutp
 function download(blob,name){const url=URL.createObjectURL(blob),a=document.createElement('a');a.href=url;a.download=name;a.click();setTimeout(()=>URL.revokeObjectURL(url),10000);}
 $('record').onclick=async()=>{if(recorder?.state==='recording'){recorder.stop();return;}try{await init();if(!window.MediaRecorder){notice('Audio recording is unavailable in this browser.');return;}chunks=[];recorder=new MediaRecorder(destination.stream);recorder.ondataavailable=e=>{if(e.data.size)chunks.push(e.data);};recorder.onstop=()=>{download(new Blob(chunks,{type:recorder.mimeType}),'dorf-'+Date.now()+(recorder.mimeType.includes('mp4')?'.mp4':recorder.mimeType.includes('ogg')?'.ogg':'.webm'));$('record').textContent='● Record';$('record').classList.remove('recording');notice('Recording downloaded. External synth audio must be recorded separately.');};recorder.start(1000);$('record').textContent='■ Save recording';$('record').classList.add('recording');notice('Recording the internal synth. Click Save recording when finished.');}catch(e){notice('Recording could not start: '+e.message);}};
 $('save').onclick=()=>download(new Blob([JSON.stringify({version:1,...settings},null,2)],{type:'application/json'}),'dorf-sound.json');$('load').onclick=()=>$('file').click();
-$('file').onchange=async e=>{try{const file=e.target.files[0];if(!file)return;if(file.size>100000)throw Error('File is too large');const s=JSON.parse(await file.text());const range=(v,a,b)=>typeof v==='number'&&Number.isFinite(v)&&v>=a&&v<=b;const arr=(v,n,fn)=>Array.isArray(v)&&v.length===n&&v.every(fn);if(s.version!==1||!arr(s.levels,3,v=>range(v,0,100))||!arr(s.detunes,3,v=>range(v,0,25))||!arr(s.muted,3,v=>typeof v==='boolean')||![36,38,40,41,43,45].includes(s.root)||!range(s.master,0,100)||!range(s.cutoff,100,6000)||!range(s.reverb,0,100)||!range(s.bpm,20,120)||!arr(s.steps,8,v=>Number.isInteger(v)&&range(v,-1,7)))throw Error('Invalid Dorf sound file');for(const k of Object.keys(settings))settings[k]=s[k];refresh();notice('Your saved sound is loaded.');}catch(e){notice('Could not load sound: '+e.message);}e.target.value='';};
+$('file').onchange=async e=>{try{const file=e.target.files[0];if(!file)return;if(file.size>100000)throw Error('File is too large');const s=JSON.parse(await file.text());s.randomizeEachPass??=false;s.restBias??=18;s.keyboardVoice??='soft';s.sequenceVoice??='soft';const range=(v,a,b)=>typeof v==='number'&&Number.isFinite(v)&&v>=a&&v<=b;const arr=(v,n,fn)=>Array.isArray(v)&&v.length===n&&v.every(fn);if(typeof s.randomizeEachPass!=='boolean'||!range(s.restBias,0,100)||!Object.hasOwn(instrumentVoices,s.keyboardVoice)||!Object.hasOwn(instrumentVoices,s.sequenceVoice)||s.version!==1||!arr(s.levels,3,v=>range(v,0,100))||!arr(s.detunes,3,v=>range(v,0,25))||!arr(s.muted,3,v=>typeof v==='boolean')||![36,38,40,41,43,45].includes(s.root)||!range(s.master,0,100)||!range(s.cutoff,100,6000)||!range(s.reverb,0,100)||!range(s.bpm,20,120)||!arr(s.steps,8,v=>Number.isInteger(v)&&range(v,-1,7)))throw Error('Invalid Dorf sound file');for(const k of Object.keys(settings))settings[k]=s[k];refresh();notice('Your saved sound is loaded.');}catch(e){notice('Could not load sound: '+e.message);}e.target.value='';};
 function draw(){requestAnimationFrame(draw);const canvas=$('scope'),g=canvas.getContext('2d'),data=new Uint8Array(analyser.fftSize);analyser.getByteTimeDomainData(data);g.clearRect(0,0,canvas.width,canvas.height);g.strokeStyle='#b7a16b';g.lineWidth=1.4;g.beginPath();for(let i=0;i<data.length;i++){const x=i/data.length*canvas.width,y=data[i]/255*canvas.height;i?g.lineTo(x,y):g.moveTo(x,y);}g.stroke();}
 refresh();

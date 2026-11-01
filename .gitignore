@@ -1,0 +1,8 @@
+.openai/
+node_modules/
+*.log
+*.webm
+*.ogg
+*.wav
+dorf-sound.json
+dorf-midi-mappings.json
