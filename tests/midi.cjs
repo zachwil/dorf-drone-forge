@@ -1,0 +1,21 @@
+const vm=require('node:vm'),fs=require('node:fs'),assert=require('node:assert/strict');
+const elements=new Map();
+const element=()=>({value:'0',dataset:{},style:{},classList:{add(){},remove(){},toggle(){}},children:[],setAttribute(){},appendChild(){},before(){},add(){},replaceChildren(){}});
+const sandbox={document:{getElementById(id){if(!elements.has(id))elements.set(id,element());return elements.get(id);},createElement:element,querySelectorAll(){return [];}},window:{addEventListener(){}},setInterval(){},setTimeout(){},requestAnimationFrame(){},console};
+vm.createContext(sandbox);vm.runInContext(fs.readFileSync('dist/app.js','utf8'),sandbox);
+vm.runInContext(`
+ctx={state:'running',currentTime:0};
+createVoice=(note)=>({note,oscs:[{detune:{setTargetAtTime(){}}}],stop(){}});
+const messages=[];selectedOutput={send:m=>messages.push(m)};
+$('channel').value='2';
+onNote('key:a',60,90);if(messages[0].join()!=='146,60,90')throw Error('Wrong output channel');
+offNote('key:a',true);if(messages[1].join()!=='130,60,0')throw Error('Missing note off');
+midiMessage({data:[144,64,100]});if(!voices.has('midi:0:64'))throw Error('Input note missing');
+if(messages.length!==2)throw Error('MIDI feedback: input forwarded');
+midiMessage({data:[176,64,127]});midiMessage({data:[128,64,0]});
+if(!voices.has('midi:0:64'))throw Error('Sustain failed');
+midiMessage({data:[176,64,0]});if(voices.size)throw Error('Sustain stuck');
+midiMessage({data:[145,67,90]});midiMessage({data:[145,67,0]});if(voices.size)throw Error('Zero velocity note off failed');
+onNote('seq',62);releaseNotes();if(voices.size||outNotes.size)throw Error('Panic left notes');
+`,sandbox);
+assert.ok(true);console.log('MIDI input, output channel, note-off, sustain, feedback prevention, and panic checks passed.');
