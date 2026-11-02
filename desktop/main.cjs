@@ -8,7 +8,7 @@ if(smoke)app.setPath('userData',path.join(app.getPath('temp'),'dorf-smoke-profil
 app.setName('Dorf Drone Forge');
 let win;
 if(!app.requestSingleInstanceLock()){app.quit();}else{
-app.on('second-instance',()=>{if(win){if(win.isMinimized())win.restore();win.focus();}});
+app.on('second-instance',()=>{if(win){if(win.isMinimized())win.restore();win.show();win.focus();}});
 app.whenReady().then(async()=>{
  const local=wc=>wc&&wc.getURL()===entryURL;
  // Chromium checks midiSysex even for this app's sysex:false request.
