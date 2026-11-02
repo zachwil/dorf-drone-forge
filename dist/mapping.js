@@ -1,11 +1,11 @@
 'use strict';
 const mappingTargets=[
- ['K1','Mountain presence','level0'],['K2','Forge presence','level1'],['K3','Crystal presence','level2'],['K4','Warmth','cutoff'],['K5','Reverb','reverb'],['K6','Master volume','master'],['K7','Choir drift','detune1'],['K8','Tempo','bpm'],
- ['Pad 1','Mountain mute','mute0'],['Pad 2','Forge mute','mute1'],['Pad 3','Crystal mute','mute2'],['Pad 4','Sequencer on/off','seqOn'],['Pad 5','Halls of stone','hall'],['Pad 6','Embers of the forge','embers'],['Pad 7','Frozen vault','ice'],['Pad 8','Awaken / rest','play']
+ ['Continuous 1','Mountain presence','level0'],['Continuous 2','Forge presence','level1'],['Continuous 3','Crystal presence','level2'],['Continuous 4','Warmth','cutoff'],['Continuous 5','Reverb','reverb'],['Continuous 6','Master volume','master'],['Continuous 7','Choir drift','detune1'],['Continuous 8','Tempo','bpm'],
+ ['Trigger 1','Mountain mute','mute0'],['Trigger 2','Forge mute','mute1'],['Trigger 3','Crystal mute','mute2'],['Trigger 4','Sequencer on/off','seqOn'],['Trigger 5','Halls of stone','hall'],['Trigger 6','Embers of the forge','embers'],['Trigger 7','Frozen vault','ice'],['Trigger 8','Awaken / rest','play']
 ];
 let mappings={},learning=null,mappingDevice='',mappingDown=new Set();
 const mappingPanel=document.createElement('section');mappingPanel.className='panel keyboard-panel';
-mappingPanel.innerHTML=`<div class="section-heading"><h2>05 <span>MPK mini Mk2 · MIDI Learn</span></h2><button id="cancelLearn">Cancel learning</button></div><p class="muted">Connect MIDI and select your MPK input above. Keys play automatically. Choose one hardware program and Bank A; turn CC on and Prog Change off. Click Learn, then move that knob or tap that pad. Release pads between taps. Mappings save automatically on this computer.</p><p class="hint">Keep the same program, bank and pad mode after learning. Shared channel + CC assignments cannot control two actions; Dorf will report a conflict. Note-mode pads on the keyboard’s channel can also capture those keyboard notes. CC mode avoids that overlap.</p><p id="mappingMonitor" role="status">Waiting for MIDI input.</p><p id="mappingStatus" role="status" aria-live="polite">Click Learn to connect your controller and assign a control.</p><div class="mapping-actions"><button id="saveMappings">Save MIDI mappings</button><button id="exportMappings">Export backup</button><button id="importMappings">Import backup</button><input id="mappingFile" type="file" accept=".json,application/json" hidden><span id="mappingSaveStatus" role="status" aria-live="polite">Mappings save automatically after each assignment.</span></div><div id="mappingRows" class="mapping-grid"></div>`;
+mappingPanel.innerHTML=`<div class="section-heading"><h2>05 <span>MIDI Learn</span></h2><button id="cancelLearn">Cancel learning</button></div><p class="muted">Connect MIDI and select your controller input above. Keys play automatically. Click Learn beside an action, then move a knob or fader (absolute CC, 0–127), or press a pad or button (CC or note). You can map any subset of actions. Mappings save automatically on this computer.</p><p class="hint">Use absolute CC mode for continuous controls and momentary mode for triggers; release triggers between presses. Relative encoders, program changes, pitch bend and SysEx cannot be learned. Keep the same controller program, bank and mode after learning. Each channel + CC or note can control one action. Note triggers sharing keyboard notes will capture those notes; use CC triggers or a separate channel.</p><p id="mappingMonitor" role="status">Waiting for MIDI input.</p><p id="mappingStatus" role="status" aria-live="polite">Click Learn to connect your controller and assign a control.</p><div class="mapping-actions"><button id="saveMappings">Save MIDI mappings</button><button id="exportMappings">Export backup</button><button id="importMappings">Import backup</button><input id="mappingFile" type="file" accept=".json,application/json" hidden><span id="mappingSaveStatus" role="status" aria-live="polite">Mappings save automatically after each assignment.</span></div><div id="mappingRows" class="mapping-grid"></div>`;
 document.querySelector('footer').before(mappingPanel);
 function mappingStorageKey(){return 'dorf-midi-map-v1:'+mappingDevice;}
 function renderMappings(){$('mappingRows').innerHTML=mappingTargets.map((t,i)=>{const m=mappings[i];return `<div class="mapping-row ${learning===i?'learning':''}"><span><strong>${t[0]}</strong> · ${t[1]}<small>${m?`${m.kind==='cc'?'CC':'Note'} ${m.number} · channel ${m.channel+1}`:'Not assigned'}</small></span><button data-learn="${i}">${learning===i?'Listening…':'Learn'}</button><button data-clear="${i}" aria-label="Clear ${t[0]}">×</button></div>`;}).join('');}
@@ -54,16 +54,15 @@ async function beginLearning(index){
   if(!midi)throw Error($('midiStatus').textContent||'MIDI access is unavailable.');
   if(!selectedInput||selectedInput.state==='disconnected'){
    const inputs=[...midi.inputs.values()].filter(p=>p.state==='connected');
-   const mpks=inputs.filter(p=>/mpk/i.test(p.name||''));
-   const candidate=mpks.length===1?mpks[0]:inputs.length===1?inputs[0]:null;
-   if(!candidate)throw Error(inputs.length?'Select your MPK in the MIDI input menu above, then click Learn again.':'No MIDI input found. Plug in the MPK USB cable, then click Learn again.');
+   const candidate=inputs.length===1?inputs[0]:null;
+   if(!candidate)throw Error(inputs.length?'Select your controller in the MIDI input menu above, then click Learn again.':'No MIDI input found. Connect your controller, then click Learn again.');
    $('midiInput').value=candidate.id;
    $('midiInput').onchange();
   }
   syncMappingDevice();
   releaseNotes();
   learning=index;
-  $('mappingStatus').textContent='Listening on '+mappingDevice+': '+(index<8?'turn ':'tap ')+mappingTargets[index][0]+'.';
+  $('mappingStatus').textContent='Listening on '+mappingDevice+': '+(index<8?'move a knob or fader for ':'press a pad or button for ')+mappingTargets[index][1]+'.';
  }catch(error){$('mappingStatus').textContent=error.message;}
  renderMappings();
 }
@@ -75,7 +74,7 @@ function mappedMidi(data){syncMappingDevice();const [status,number,value=0]=data
  $('mappingMonitor').textContent=`Channel ${channel+1} · ${kind===176?'CC':kind===144||kind===128?'Note':kind===224?'Pitch bend':'Message'} ${number} · value ${value}`;
  const type=kind===176?'cc':kind===144||kind===128?'note':null;if(!type)return false;
  const active=kind!==128&&value>0;
- if(learning!==null){if(!active)return false;if(learning<8&&type!=='cc'){$('mappingStatus').textContent='Turn a knob to send a CC message.';return true;}
+ if(learning!==null){if(!active)return false;if(learning<8&&type!=='cc'){$('mappingStatus').textContent='Move a knob or fader in absolute CC mode (0–127).';return true;}
  if(type==='cc'&&[64,120,121,123].includes(number)){$('mappingStatus').textContent='This CC is reserved for sustain or all-notes-off. Choose another hardware assignment.';return true;}
  const conflict=Object.entries(mappings).find(([i,m])=>+i!==learning&&m.kind===type&&m.number===number&&m.channel===channel);
  if(conflict){$('mappingStatus').textContent='Already assigned to '+mappingTargets[+conflict[0]][0]+'. Clear that row or change the hardware assignment.';return true;}

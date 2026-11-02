@@ -72,11 +72,21 @@ console.log('MIDI Learn, conflict detection, knob ranges, pad debounce, keyboard
  await vm.runInContext(`(async()=>{
   const originalConnect=$('midiConnect').onclick;
   midi=null;selectedInput=null;mappingDevice='';
-  $('midiConnect').onclick=async()=>{midi={inputs:new Map([['mpk',{id:'mpk',name:'MPK mini MK2',state:'connected'}]])};};
+  $('midiConnect').onclick=async()=>{midi={inputs:new Map([['controller',{id:'controller',name:'Generic fader controller',state:'connected'}]])};};
   await $('mappingRows').onclick({target:{closest:()=>({dataset:{learn:'2'}})}});
-  if(learning!==2||selectedInput.id!=='mpk')throw Error('Learn did not connect and select MPK');
+  if(learning!==2||selectedInput.id!=='controller')throw Error('Learn did not select the only controller');
   if(!$('mappingStatus').textContent.includes('Listening'))throw Error('Missing listening feedback');
   midiMessage({data:[176,25,70]});if(mappings[2].number!==25)throw Error('Click-to-learn did not map incoming CC');
+  selectedInput=null;midi={inputs:new Map([['a',{id:'a',name:'MPK mini MK2',state:'connected'}],['b',{id:'b',name:'Other controller',state:'connected'}]])};
+  await beginLearning(3);
+  if(learning!==null||selectedInput!==null||!$('mappingStatus').textContent.includes('Select your controller'))throw Error('Multiple inputs should require selection without brand preference');
+  selectedInput=midi.inputs.get('b');await beginLearning(3);
+  if(learning!==3||selectedInput.id!=='b')throw Error('Explicit controller selection ignored');
+  midiMessage({data:[178,30,127]});if(mappings[3].channel!==2)throw Error('Fader on another channel failed');
+  await beginLearning(9);midiMessage({data:[153,45,100]});
+  if(mappings[9].kind!=='note'||mappings[9].channel!==9)throw Error('Note trigger learning failed');
+  await beginLearning(4);midiMessage({data:[153,46,100]});
+  if(learning!==4||mappings[4])throw Error('Continuous control accepted a note');
   selectedInput=null;midi={inputs:new Map()};
   await beginLearning(3);if(learning!==null||!$('mappingStatus').textContent.includes('No MIDI input'))throw Error('Missing disconnected feedback');
   selectedInput=null;midi=null;let finishConnect;
@@ -102,5 +112,5 @@ console.log('MIDI Learn, conflict detection, knob ranges, pad debounce, keyboard
   if(!invalidRejected)throw Error('Duplicate backup accepted');
 
  })()`,sandbox);
- console.log('Learn button connection, automatic MPK selection, feedback, assignment and cancellation passed.');
+ console.log('Generic controller selection, multiple-input choice, CC faders, note triggers, backups and cancellation passed.');
 })().catch(error=>{console.error(error);process.exitCode=1;});

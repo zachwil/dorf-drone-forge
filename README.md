@@ -1,124 +1,39 @@
 # Dorf · Drone Forge
 
-A local ambient drone and dungeon synth instrument for Windows, Linux, or your browser. Includes three drone layers, eight playable voices, an eight-step sequencer, USB MIDI, recording, and a reactive mine scene. No account or app build is required.
+An offline ambient drone and dungeon synth instrument for Windows and Linux, with a browser option. Three drone layers, eight instrument voices, an eight-step sequencer, USB MIDI, audio recording, and a reactive mine scene.
 
-## Install and launch
+## Download and run
 
-Download and extract this repository (or clone it). Keep the whole project folder together. Run the commands below from that folder unless noted.
+Get the latest build from [GitHub Releases](https://github.com/zachwil/dorf-drone-forge/releases/latest).
 
-For standalone apps, download a Windows or Linux x64 archive from [GitHub Releases](https://github.com/zachwil/dorf-drone-forge/releases). A private repository requires access to download its releases.
+| Platform | Download | Launch after extracting |
+| --- | --- | --- |
+| Windows x64 | `windows-x64.zip` | Double-click **Dorf Drone Forge.exe** |
+| Linux x64 | `linux-x64.tar.gz` | Open a terminal in the extracted folder and run `./dorf-drone-forge` |
 
-### Windows
+Extract the **entire archive** and keep its files together. Electron is included; no Node.js, Python, or separate Electron installation is needed. Linux requires a desktop with Electron-compatible system libraries and Chromium sandbox support. Windows builds are unsigned, so Windows may ask for confirmation on first launch.
 
-**Portable app:** If you received a Windows release ZIP, extract the entire archive and double-click `Dorf Drone Forge.exe` inside. Keep its supporting files together. No Node.js, installation, or internet access is needed. The app is unsigned, so Windows may ask for confirmation on first launch.
+Private repository downloads require repository access. `SHA256SUMS.txt` is an optional download-integrity check; it is not needed to run the app.
 
-**From source:**
+For source installation, browser use, or packaging, see [Setup and development](docs/DEVELOPMENT.md).
 
-1. Install [Node.js LTS](https://nodejs.org/) with npm included and Node added to PATH (the installer defaults).
-2. Double-click `launch-dorf.cmd`. The first launch downloads Electron and needs internet access; subsequent launches work offline.
-3. Optionally create a desktop or Start menu shortcut to `launch-dorf.cmd`.
+## Quick start
 
-If Node.js is not found, close and reopen your terminal after installation. For manual setup:
+- **Awaken the forge** starts the drones. Shape them with presence, drift, root note, Warmth, and cavern reverb.
+- Play the on-screen keyboard, a MIDI controller, or **A W S E D F T G Y H U J K**. Choose separate keyboard and sequencer instruments.
+- Enable the sequencer; click steps to change notes or add rests. **Randomize each pass** creates a new pattern after step 8; **Rest bias** controls how often generated steps are silent.
+- **Record** captures internal audio, typically as WebM. External synthesizer audio is not captured over MIDI.
+- **Save/Load sound** exports/imports sound settings as JSON. Complete the save dialog when exporting.
+- **Silence all / Escape** stops audio. Play a key or awaken the forge to resume.
 
-```powershell
-cd desktop
-npm install
-npm start
-```
+Maximize the window for the full dashboard. **Pause scene** pauses the animation without stopping audio.
 
-To update Electron, close Dorf and run `npm update` from `desktop`.
+## MIDI and backups
 
-To build a shareable Windows ZIP, run `npm install` then `npm run package:windows` from `desktop` on Windows. The bundle is written to `release/` in the project root and includes Electron and its license files. Move any previous output folder before rebuilding the same version.
+Connect your controller, open **MIDI setup**, click **Connect MIDI**, grant permission, and select input and/or output.
 
-### Linux
+Input supports velocity, sustain (CC64), filter/mod wheel (CC1), and ±2-semitone pitch bend. Output sends keyboard and sequencer notes on the selected channel. Input is not forwarded to output; drones stay internal.
 
-**Portable app:** Extract the Linux release `.tar.gz`, open a terminal in its folder, and run `./dorf-drone-forge`. Keep its supporting files together. No Node.js or system Electron install is needed. Your Linux desktop must provide Electron-compatible system libraries and Chromium sandbox support.
+Mappings save automatically by device name. **Save MIDI mappings** verifies the save. **Export backup** creates a separate mapping JSON file; select the destination input before using **Import backup**, which replaces its mappings. Sound presets and MIDI mappings need separate backups.
 
-**From source:**
-
-Install a system Electron runtime through your distribution's package manager. The launcher searches for `electron43`, `electron`, `electron45`, then `electron44`; Electron 43 was tested on CachyOS.
-
-```bash
-chmod +x launch-dorf.sh
-./launch-dorf.sh
-```
-
-No Node.js/npm installation or server is needed for this workflow. After installing Electron, the app works offline. Update Electron through your system package manager.
-
-Optional application-menu entry (requires Python 3):
-
-```bash
-python3 desktop/install-launcher.py
-```
-
-Keep the project in its current location after installing the menu entry. To remove the entry, delete `~/.local/share/applications/dorf-drone-forge.desktop`, or the equivalent under `$XDG_DATA_HOME/applications`.
-
-To build a Linux archive, run `npm ci` then `npm run package:linux` from `desktop` on Linux. To publish both platforms, push a version tag such as `v1.0.0`; the Desktop release workflow builds, smoke-tests, and uploads both archives with checksums.
-
-### Browser (Windows or Linux)
-
-Install Python 3, then start a local server:
-
-```bash
-# Linux
-python3 -m http.server 8765 --directory dist
-```
-
-```powershell
-# Windows
-py -3 -m http.server 8765 --directory dist
-```
-
-Open [localhost:8765](http://localhost:8765) in Chrome or Edge for Web MIDI support. Keep the terminal open; press Ctrl+C to stop the server.
-
-## Play and save
-
-- Click **Awaken the forge** to start the drones. Adjust their levels and drift, root note, Warmth filter, and cavern reverb.
-- Play the on-screen keyboard or **A W S E D F T G Y H U J K**. Choose separate **Keyboard instrument** and **Sequencer instrument** voices; changes affect new notes.
-- Enable the sequencer and click steps to cycle through notes and a rest. **Randomize each pass** changes the pattern after step 8; **Rest bias** controls the chance of silence in generated patterns.
-- **Record** captures internal audio, typically as WebM. It does not capture an external synthesizer's audio over MIDI.
-- **Save/Load sound** exports/imports sound settings as JSON, including instrument and sequencer settings. Desktop exports open a save dialog.
-- **Silence all** / **Escape** stops audio. Play a key or awaken the forge to resume.
-
-Use **MIDI setup** in the header for devices, learning, and mapping backups. Maximize the window for the compact dashboard. **Pause scene** stops only the animation.
-
-## USB MIDI
-
-Connect an OS-recognized MIDI device, open **MIDI setup**, click **Connect MIDI**, grant permission, and select input and/or output. Browser MIDI requires localhost or HTTPS.
-
-Input supports velocity, sustain (CC64), filter/mod wheel (CC1), and ±2-semitone pitch bend. Output sends keyboard and sequencer notes on the selected channel. Input is not forwarded to output; drones remain internal.
-
-### Akai MPK mini Mk2
-
-1. Select the MPK input. Choose a hardware program and pad Bank A; enable **CC**, disable **Prog Change** and **Note Repeat**, and use **Momentary** pads.
-2. In **MPK mini Mk2 · MIDI Learn**, click **Learn** beside each knob/pad and move or tap the matching hardware control.
-3. Keep that hardware program, bank, and mode for future sessions. Piano keys work without learning.
-
-| Controls | Functions |
-| --- | --- |
-| K1–K3 | Drone levels |
-| K4–K8 | Filter, reverb, master, choir detune, tempo |
-| Pads 1–3 | Drone mutes |
-| Pad 4 | Sequencer |
-| Pads 5–7 | Sound presets |
-| Pad 8 | Drone playback |
-
-Conflicting assignments are rejected; clear the existing assignment or change the controller setting. CC64 and channel-mode messages are reserved. If a pad responds every second tap, switch it from Toggle to Momentary. Note-mode pads need a separate channel or unused notes to avoid conflicts with piano keys.
-
-Mappings save automatically by input device name. **Save MIDI mappings** verifies local storage. Use **Export backup** to save `dorf-midi-mappings.json`; to restore, select the destination input and choose **Import backup**, which replaces that input's mappings. Mapping backups are separate from sound presets.
-
-## Check your installation
-
-Run the desktop smoke test from the project folder:
-
-```powershell
-# Windows PowerShell
-.\launch-dorf.cmd --smoke-test
-```
-
-```bash
-# Linux
-./launch-dorf.sh --smoke-test
-```
-
-The hidden-window test checks audio note release, MIDI access, recording support, and dashboard layout, then prints results and a screenshot path in the OS temporary directory. Test physical MIDI input/output with your own equipment as well.
+See [MIDI controller mapping](docs/MIDI-CONTROLLERS.md) to assign knobs, faders, pads, or buttons. Controllers must send standard MIDI CC or note messages; relative encoders and program changes cannot be learned.

@@ -19,6 +19,7 @@ fs.writeFileSync(path.join(appRoot,'package.json'),JSON.stringify({name:'dorf-dr
 for(const file of ['main.cjs','dorf.svg'])fs.copyFileSync(path.join(__dirname,file),path.join(appRoot,'desktop',file));
 fs.cpSync(path.join(root,'dist'),path.join(appRoot,'dist'),{recursive:true});
 fs.copyFileSync(path.join(root,'README.md'),path.join(target,'README.md'));
+fs.cpSync(path.join(root,'docs'),path.join(target,'docs'),{recursive:true});
 fs.writeFileSync(path.join(target,'START HERE.txt'),
   'Dorf Drone Forge\r\n\r\nExtract the entire ZIP, then double-click Dorf Drone Forge.exe.\r\nKeep all included files and folders together. No installation, Node.js, or internet is required.\r\nPress Escape to silence audio. Open MIDI setup to connect a controller.\r\n\r\nThis build is unsigned; Windows may ask you to confirm before running it.\r\n');
 const archive=path.join(release,`${name}.zip`);

@@ -18,6 +18,7 @@ fs.writeFileSync(path.join(appRoot,'package.json'),JSON.stringify({name:'dorf-dr
 for(const file of ['main.cjs','dorf.svg'])fs.copyFileSync(path.join(__dirname,file),path.join(appRoot,'desktop',file));
 fs.cpSync(path.join(root,'dist'),path.join(appRoot,'dist'),{recursive:true});
 fs.copyFileSync(path.join(root,'README.md'),path.join(target,'README.md'));
+fs.cpSync(path.join(root,'docs'),path.join(target,'docs'),{recursive:true});
 fs.writeFileSync(path.join(target,'START HERE.txt'),
   'Dorf Drone Forge\n\nExtract the entire archive, then run ./dorf-drone-forge from its folder.\nKeep all included files together. Node.js and a system Electron install are not required.\nRequires an x64 Linux desktop with Electron-compatible system libraries.\nPress Escape to silence audio. Open MIDI setup to connect a controller.\n');
 const archive=path.join(release,`${name}.tar.gz`);
