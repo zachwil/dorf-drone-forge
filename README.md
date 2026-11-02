@@ -6,6 +6,8 @@ A local ambient drone and dungeon synth instrument for Windows, Linux, or your b
 
 Download and extract this repository (or clone it). Keep the whole project folder together. Run the commands below from that folder unless noted.
 
+For standalone apps, download a Windows or Linux x64 archive from [GitHub Releases](https://github.com/zachwil/dorf-drone-forge/releases). A private repository requires access to download its releases.
+
 ### Windows
 
 **Portable app:** If you received a Windows release ZIP, extract the entire archive and double-click `Dorf Drone Forge.exe` inside. Keep its supporting files together. No Node.js, installation, or internet access is needed. The app is unsigned, so Windows may ask for confirmation on first launch.
@@ -30,6 +32,10 @@ To build a shareable Windows ZIP, run `npm install` then `npm run package:window
 
 ### Linux
 
+**Portable app:** Extract the Linux release `.tar.gz`, open a terminal in its folder, and run `./dorf-drone-forge`. Keep its supporting files together. No Node.js or system Electron install is needed. Your Linux desktop must provide Electron-compatible system libraries and Chromium sandbox support.
+
+**From source:**
+
 Install a system Electron runtime through your distribution's package manager. The launcher searches for `electron43`, `electron`, `electron45`, then `electron44`; Electron 43 was tested on CachyOS.
 
 ```bash
@@ -46,6 +52,8 @@ python3 desktop/install-launcher.py
 ```
 
 Keep the project in its current location after installing the menu entry. To remove the entry, delete `~/.local/share/applications/dorf-drone-forge.desktop`, or the equivalent under `$XDG_DATA_HOME/applications`.
+
+To build a Linux archive, run `npm ci` then `npm run package:linux` from `desktop` on Linux. To publish both platforms, push a version tag such as `v1.0.0`; the Desktop release workflow builds, smoke-tests, and uploads both archives with checksums.
 
 ### Browser (Windows or Linux)
 

@@ -8,7 +8,8 @@
   "scripts": {
     "start": "node launch.cjs",
     "smoke-test": "node launch.cjs --smoke-test",
-    "package:windows": "node package-windows.cjs"
+    "package:windows": "node package-windows.cjs",
+    "package:linux": "node package-linux.cjs"
   },
   "devDependencies": {
     "electron": "^43.0.0"
