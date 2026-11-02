@@ -1,1 +1,15 @@
-{"name":"dorf-drone-forge","productName":"Dorf Drone Forge","version":"1.0.0","private":true,"main":"main.cjs","description":"Local ambient drone and dungeon synth instrument"}
+{
+  "name": "dorf-drone-forge",
+  "productName": "Dorf Drone Forge",
+  "version": "1.0.0",
+  "private": true,
+  "main": "main.cjs",
+  "description": "Local ambient drone and dungeon synth instrument",
+  "scripts": {
+    "start": "node launch.cjs",
+    "smoke-test": "node launch.cjs --smoke-test"
+  },
+  "devDependencies": {
+    "electron": "^43.0.0"
+  }
+}

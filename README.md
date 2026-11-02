@@ -1,6 +1,16 @@
 # Dorf · Drone Forge
 
-A local Linux desktop instrument for ambient drone and dungeon synth, with an optional browser version.
+A local Windows and Linux desktop instrument for ambient drone and dungeon synth, with an optional browser version.
+
+## Windows desktop
+
+Install [Node.js LTS](https://nodejs.org/), then double-click `launch-dorf.cmd` in this directory. The first launch downloads Electron using npm and requires internet access. Later launches work offline. Keep the whole project folder together; you can create a Windows shortcut to `launch-dorf.cmd` for your desktop or Start menu.
+
+Audio, USB MIDI, recordings, and sound presets use the same local desktop app as Linux. Press Escape to silence all audio. No Python, Bash, or local web server is needed.
+
+From Command Prompt, run `launch-dorf.cmd --smoke-test` for the hidden-window audio, MIDI, and layout checks. From PowerShell, use `.\launch-dorf.cmd --smoke-test`. The test prints its results and the screenshot path in the Windows temporary directory. USB hardware still needs an end-to-end test with your equipment.
+
+For manual setup, run `npm install` in `desktop`, then `npm start` (or `npm run smoke-test`). To update the desktop runtime, run `npm update` there while Dorf is closed.
 
 ## Linux desktop
 

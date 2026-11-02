@@ -44,7 +44,7 @@ app.whenReady().then(async()=>{
     await ctx.close();
     return {title:document.title,secureContext:isSecureContext,midiAvailable,inputs:access.inputs.size,outputs:access.outputs.size,recordingAvailable,noteRelease:'passed'};
    })()`,true);
-   const screenshot=await win.webContents.capturePage();require('node:fs').writeFileSync('/tmp/dorf-desktop-smoke.png',screenshot.toPNG());console.log('DORF_SMOKE '+JSON.stringify(result));app.exit(0);
+   const screenshot=await win.webContents.capturePage();const screenshotPath=path.join(app.getPath('temp'),'dorf-desktop-smoke.png');require('node:fs').writeFileSync(screenshotPath,screenshot.toPNG());console.log('DORF_SMOKE '+JSON.stringify({...result,screenshotPath}));app.exit(0);
   }catch(error){console.error(String(error),error?.stack);app.exit(1);}
  }
 }).catch(error=>{console.error(String(error),error?.stack);app.exit(1);});
