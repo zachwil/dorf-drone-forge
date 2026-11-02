@@ -8,6 +8,7 @@ permissions:
 jobs:
   build:
     strategy:
+      fail-fast: false
       matrix:
         include:
           - os: windows-latest
@@ -28,6 +29,7 @@ jobs:
       - run: npm run package:${{ matrix.platform }}
         working-directory: desktop
       - name: Test packaged Windows application
+        timeout-minutes: 2
         if: runner.os == 'Windows'
         shell: pwsh
         run: |
@@ -38,11 +40,12 @@ jobs:
           if ($process.ExitCode -ne 0) { throw 'Packaged smoke test failed' }
           if (-not (Select-String -Path smoke.log -Pattern 'DORF_SMOKE')) { throw 'Missing smoke test result' }
       - name: Test packaged Linux application
+        timeout-minutes: 3
         if: runner.os == 'Linux'
         run: |
           sudo apt-get update
           sudo apt-get install -y xvfb libasound2 libnss3 libatk-bridge2.0-0 libgtk-3-0 libgbm1
-          xvfb-run -a release/Dorf-Drone-Forge-*-linux-x64/dorf-drone-forge --smoke-test | tee smoke.log
+          xvfb-run -a release/Dorf-Drone-Forge-*-linux-x64/dorf-drone-forge --smoke-test --smoke-test-allow-missing-midi | tee smoke.log
           grep -q DORF_SMOKE smoke.log
       - uses: actions/upload-artifact@v4
         with:

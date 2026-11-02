@@ -5,4 +5,4 @@ Standalone desktop downloads with Electron included. No Node.js, Python, or syst
 
 Keep each extracted folder intact. Audio works offline. Use **MIDI setup** to connect a controller; press Escape to silence audio. Sound presets and MIDI mapping backups are separate exports.
 
-SHA256 checksums are included. Both packaged builds are smoke-tested before publishing; physical USB MIDI hardware still requires a local test.
+SHA256 checksums are included. Both packaged builds are smoke-tested before publishing. The Linux CI runner has no ALSA MIDI device, so its MIDI access check reports unavailable; physical USB MIDI hardware requires a local test on either platform.

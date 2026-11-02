@@ -4,6 +4,7 @@ const {pathToFileURL}=require('node:url');
 const entry=path.join(__dirname,'../dist/index.html');
 const entryURL=pathToFileURL(entry).href;
 const smoke=process.argv.includes('--smoke-test');
+const allowMissingMidi=smoke&&process.platform==='linux'&&process.argv.includes('--smoke-test-allow-missing-midi');
 if(smoke)app.setPath('userData',path.join(app.getPath('temp'),'dorf-smoke-profile'));
 app.setName('Dorf Drone Forge');
 let win;
@@ -39,10 +40,14 @@ app.whenReady().then(async()=>{
     if(document.documentElement.scrollHeight>innerHeight)throw Error('Dashboard overflows vertically');
     if(document.documentElement.scrollWidth>innerWidth)throw Error('Dashboard overflows horizontally');
     const midiAvailable=typeof navigator.requestMIDIAccess==='function';
-    const access=await navigator.requestMIDIAccess({sysex:false}).catch(e=>{throw new Error('MIDI: '+e.name+': '+e.message);});
+    let midiError=null;
+    const access=await navigator.requestMIDIAccess({sysex:false}).catch(e=>{
+     if(${JSON.stringify(allowMissingMidi)}&&e.name==='InvalidStateError'){midiError=e.name+': '+e.message;return null;}
+     throw new Error('MIDI: '+e.name+': '+e.message);
+    });
     const recordingAvailable=typeof MediaRecorder==='function';
     await ctx.close();
-    return {title:document.title,secureContext:isSecureContext,midiAvailable,inputs:access.inputs.size,outputs:access.outputs.size,recordingAvailable,noteRelease:'passed'};
+    return {title:document.title,secureContext:isSecureContext,midiAvailable,midiAccess:access?'passed':'unavailable',midiError,inputs:access?.inputs.size??0,outputs:access?.outputs.size??0,recordingAvailable,noteRelease:'passed'};
    })()`,true);
    const screenshot=await win.webContents.capturePage();const screenshotPath=path.join(app.getPath('temp'),'dorf-desktop-smoke.png');require('node:fs').writeFileSync(screenshotPath,screenshot.toPNG());console.log('DORF_SMOKE '+JSON.stringify({...result,screenshotPath}));app.exit(0);
   }catch(error){console.error(String(error),error?.stack);app.exit(1);}
