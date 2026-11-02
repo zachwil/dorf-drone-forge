@@ -4,7 +4,7 @@
   "version": "1.0.0",
   "private": true,
   "main": "main.cjs",
-  "description": "Local ambient drone and dungeon synth instrument",
+  "description": "An ambient drone and dungeon synth instrument for Windows and Linux",
   "scripts": {
     "start": "node launch.cjs",
     "smoke-test": "node launch.cjs --smoke-test",
