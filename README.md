@@ -8,6 +8,10 @@ Download and extract this repository (or clone it). Keep the whole project folde
 
 ### Windows
 
+**Portable app:** If you received a Windows release ZIP, extract the entire archive and double-click `Dorf Drone Forge.exe` inside. Keep its supporting files together. No Node.js, installation, or internet access is needed. The app is unsigned, so Windows may ask for confirmation on first launch.
+
+**From source:**
+
 1. Install [Node.js LTS](https://nodejs.org/) with npm included and Node added to PATH (the installer defaults).
 2. Double-click `launch-dorf.cmd`. The first launch downloads Electron and needs internet access; subsequent launches work offline.
 3. Optionally create a desktop or Start menu shortcut to `launch-dorf.cmd`.
@@ -21,6 +25,8 @@ npm start
 ```
 
 To update Electron, close Dorf and run `npm update` from `desktop`.
+
+To build a shareable Windows ZIP, run `npm install` then `npm run package:windows` from `desktop` on Windows. The bundle is written to `release/` in the project root and includes Electron and its license files. Move any previous output folder before rebuilding the same version.
 
 ### Linux
 

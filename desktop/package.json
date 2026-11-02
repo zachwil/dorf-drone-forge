@@ -7,7 +7,8 @@
   "description": "Local ambient drone and dungeon synth instrument",
   "scripts": {
     "start": "node launch.cjs",
-    "smoke-test": "node launch.cjs --smoke-test"
+    "smoke-test": "node launch.cjs --smoke-test",
+    "package:windows": "node package-windows.cjs"
   },
   "devDependencies": {
     "electron": "^43.0.0"
